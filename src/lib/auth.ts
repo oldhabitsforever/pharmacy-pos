@@ -1,6 +1,5 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
-import { db } from './db';
 
 async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   if (!storedHash.startsWith('pbkdf2:')) return false;
@@ -20,6 +19,7 @@ async function verifyPassword(password: string, storedHash: string): Promise<boo
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   trustHost: true,
   providers: [
     Credentials({
@@ -29,6 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
+        const { db } = await import('./db');
         const user = await db.user.findUnique({ where: { username: credentials.username as string } });
         if (!user || !user.isActive) return null;
         const valid = await verifyPassword(credentials.password as string, user.passwordHash);
