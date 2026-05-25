@@ -2,8 +2,10 @@
 const nextConfig = {
   experimental: { serverComponentsExternalPackages: ['@prisma/client'] },
 };
-const { setupDevPlatform } = require('@cloudflare/next-on-pages/next-dev');
+
 if (process.env.NODE_ENV === 'development') {
+  const { setupDevPlatform } = require('@cloudflare/next-on-pages/next-dev');
   setupDevPlatform().catch(console.error);
 }
+
 module.exports = nextConfig;
