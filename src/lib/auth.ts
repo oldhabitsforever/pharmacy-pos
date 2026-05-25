@@ -1,7 +1,23 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
 import { db } from './db';
+
+async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  if (!storedHash.startsWith('pbkdf2:')) return false;
+  const parts = storedHash.split(':');
+  const saltHex = parts[1];
+  const expectedHashHex = parts[2];
+  const encoder = new TextEncoder();
+  const saltBytes = new Uint8Array(saltHex.match(/.{2}/g)!.map((h: string) => parseInt(h, 16)));
+  const keyMaterial = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const hashBuf = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  const hashHex = Array.from(new Uint8Array(hashBuf)).map((b: number) => b.toString(16).padStart(2, '0')).join('');
+  return hashHex === expectedHashHex;
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -15,7 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!credentials?.username || !credentials?.password) return null;
         const user = await db.user.findUnique({ where: { username: credentials.username as string } });
         if (!user || !user.isActive) return null;
-        const valid = await bcrypt.compare(credentials.password as string, user.passwordHash);
+        const valid = await verifyPassword(credentials.password as string, user.passwordHash);
         if (!valid) return null;
         return { id: user.id, name: user.fullName, email: user.username, role: user.role };
       },
