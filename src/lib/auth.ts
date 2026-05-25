@@ -29,12 +29,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.username || !credentials?.password) return null;
-        const { db } = await import('./db');
-        const user = await db.user.findUnique({ where: { username: credentials.username as string } });
-        if (!user || !user.isActive) return null;
-        const valid = await verifyPassword(credentials.password as string, user.passwordHash);
-        if (!valid) return null;
-        return { id: user.id, name: user.fullName, email: user.username, role: user.role };
+        try {
+          const { neon } = await import('@neondatabase/serverless');
+          const sql = neon(process.env.DATABASE_URL!);
+          const rows = await sql`SELECT id, username, "fullName", role, "passwordHash", "isActive" FROM "User" WHERE username = ${credentials.username as string} LIMIT 1`;
+          const user = rows[0];
+          if (!user || !user.isActive) return null;
+          const valid = await verifyPassword(credentials.password as string, user.passwordHash as string);
+          if (!valid) return null;
+          return { id: user.id as string, name: user.fullName as string, email: user.username as string, role: user.role as string };
+        } catch (e) {
+          console.error('Auth error:', e);
+          return null;
+        }
       },
     }),
   ],
