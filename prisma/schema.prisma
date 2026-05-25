@@ -1,0 +1,194 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  fullName     String
+  role         String   @default("cashier")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  sales        Sale[]
+}
+
+model ProductType {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Product {
+  id              String          @id @default(cuid())
+  name            String
+  genericName     String?
+  barcode         String?         @unique
+  productTypeId   String?
+  productType     ProductType?    @relation(fields: [productTypeId], references: [id])
+  requiresPrescription Boolean   @default(false)
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  units           ProductUnit[]
+  inventoryBatches InventoryBatch[]
+  saleLines       SaleLine[]
+  purchaseOrderLines PurchaseOrderLine[]
+}
+
+model ProductUnit {
+  id                 String     @id @default(cuid())
+  productId          String
+  product            Product    @relation(fields: [productId], references: [id])
+  unitName           String
+  conversionFactor   Int        @default(1)
+  isBaseUnit         Boolean    @default(false)
+  isDirectlySellable Boolean    @default(true)
+  retailPrice        Decimal    @db.Decimal(12, 2)
+  saleLines          SaleLine[]
+}
+
+model Vendor {
+  id             String          @id @default(cuid())
+  name           String
+  contactPerson  String?
+  phone          String?
+  email          String?
+  address        String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id              String              @id @default(cuid())
+  poNumber        String              @unique
+  vendorId        String
+  vendor          Vendor              @relation(fields: [vendorId], references: [id])
+  status          String              @default("Draft")
+  orderDate       DateTime            @default(now())
+  expectedDate    DateTime?
+  totalAmount     Decimal             @db.Decimal(12, 2) @default(0)
+  amountPaid      Decimal             @db.Decimal(12, 2) @default(0)
+  notes           String?
+  lines           PurchaseOrderLine[]
+  payments        POPayment[]
+  inventoryBatches InventoryBatch[]
+}
+
+model PurchaseOrderLine {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+  orderedQty      Int
+  receivedQty     Int           @default(0)
+  costPerUnit     Decimal       @db.Decimal(12, 2)
+  batchNumber     String?
+  expiryDate      DateTime?
+}
+
+model POPayment {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  amount          Decimal       @db.Decimal(12, 2)
+  paymentDate     DateTime      @default(now())
+  note            String?
+}
+
+model InventoryBatch {
+  id                        String        @id @default(cuid())
+  productId                 String
+  product                   Product       @relation(fields: [productId], references: [id])
+  purchaseOrderId           String?
+  purchaseOrder             PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+  batchNumber               String?
+  expiryDate                DateTime?
+  quantityReceivedBaseUnits Int
+  quantityRemainingBaseUnits Int
+  costPerBaseUnit           Decimal       @db.Decimal(12, 2)
+  receivedAt                DateTime      @default(now())
+}
+
+model Customer {
+  id                 String   @id @default(cuid())
+  name               String
+  phone              String?
+  email              String?
+  address            String?
+  accountId          String   @unique
+  discountPercentage Decimal  @db.Decimal(5, 2) @default(0)
+  creditBalance      Decimal  @db.Decimal(12, 2) @default(0)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  sales              Sale[]
+}
+
+model Sale {
+  id                 String     @id @default(cuid())
+  saleNumber         String     @unique
+  customerId         String?
+  customer           Customer?  @relation(fields: [customerId], references: [id])
+  cashierId          String
+  cashier            User       @relation(fields: [cashierId], references: [id])
+  saleDate           DateTime   @default(now())
+  subtotal           Decimal    @db.Decimal(12, 2)
+  discountPercentage Decimal    @db.Decimal(5, 2) @default(0)
+  discountAmount     Decimal    @db.Decimal(12, 2) @default(0)
+  total              Decimal    @db.Decimal(12, 2)
+  amountPaid         Decimal    @db.Decimal(12, 2)
+  changeDue          Decimal    @db.Decimal(12, 2)
+  status             String     @default("Completed")
+  lines              SaleLine[]
+  refunds            Refund[]
+}
+
+model SaleLine {
+  id                   String   @id @default(cuid())
+  saleId               String
+  sale                 Sale     @relation(fields: [saleId], references: [id])
+  productId            String
+  product              Product  @relation(fields: [productId], references: [id])
+  productUnitId        String
+  productUnit          ProductUnit @relation(fields: [productUnitId], references: [id])
+  quantity             Int
+  refundedQuantity     Int      @default(0)
+  unitPriceSnapshot    Decimal  @db.Decimal(12, 2)
+  costPriceSnapshot    Decimal  @db.Decimal(12, 2) @default(0)
+  lineTotal            Decimal  @db.Decimal(12, 2)
+  refundLines          RefundLine[]
+}
+
+model Refund {
+  id           String       @id @default(cuid())
+  refundNumber String       @unique
+  saleId       String
+  sale         Sale         @relation(fields: [saleId], references: [id])
+  reason       String?
+  totalAmount  Decimal      @db.Decimal(12, 2)
+  refundDate   DateTime     @default(now())
+  lines        RefundLine[]
+}
+
+model RefundLine {
+  id          String   @id @default(cuid())
+  refundId    String
+  refund      Refund   @relation(fields: [refundId], references: [id])
+  saleLineId  String
+  saleLine    SaleLine @relation(fields: [saleLineId], references: [id])
+  quantity    Int
+  amount      Decimal  @db.Decimal(12, 2)
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
