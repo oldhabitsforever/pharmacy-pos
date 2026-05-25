@@ -1,12 +1,19 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
+function hashPassword(password: string): string {
+  const saltBytes = crypto.randomBytes(16);
+  const saltHex = saltBytes.toString('hex');
+  const hashBytes = crypto.pbkdf2Sync(password, saltBytes, 100000, 32, 'sha256');
+  const hashHex = hashBytes.toString('hex');
+  return `pbkdf2:${saltHex}:${hashHex}`;
+}
+
 async function main() {
-  const COST = 4;
-  const adminHash = await bcrypt.hash('admin123', COST);
-  const cashierHash = await bcrypt.hash('cashier123', COST);
+  const adminHash = hashPassword('admin123');
+  const cashierHash = hashPassword('cashier123');
 
   await prisma.user.upsert({
     where: { username: 'admin' },
