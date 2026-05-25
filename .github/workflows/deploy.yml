@@ -22,18 +22,13 @@ jobs:
           npx prisma db seed
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      - name: Set Cloudflare Pages runtime env vars
+      - name: Set Cloudflare Pages secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
         run: |
-          curl -s -X PATCH \
-            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects/pharmacy-pos" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "{\"deployment_configs\":{\"production\":{\"env_vars\":{\"DATABASE_URL\":{\"value\":\"${DATABASE_URL}\"},\"NEXTAUTH_SECRET\":{\"value\":\"${NEXTAUTH_SECRET}\"},\"NEXTAUTH_URL\":{\"value\":\"https://pharmacy-pos-3xi.pages.dev\"}}}}}" || true
+          echo "${{ secrets.DATABASE_URL }}" | npx wrangler@3 pages secret put DATABASE_URL --project-name=pharmacy-pos
+          echo "${{ secrets.NEXTAUTH_SECRET }}" | npx wrangler@3 pages secret put NEXTAUTH_SECRET --project-name=pharmacy-pos
       - name: Build with next-on-pages
         run: npx @cloudflare/next-on-pages@1
         env:
