@@ -4,4 +4,4 @@ compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
 
 [vars]
-NEXTAUTH_URL = "https://pharmacy-pos.pages.dev"
+NEXTAUTH_URL = "https://pharmacy-pos-3xi.pages.dev"
