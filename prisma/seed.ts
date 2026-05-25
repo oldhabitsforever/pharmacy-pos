@@ -4,18 +4,19 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminHash = await bcrypt.hash('admin123', 10);
-  const cashierHash = await bcrypt.hash('cashier123', 10);
+  const COST = 4;
+  const adminHash = await bcrypt.hash('admin123', COST);
+  const cashierHash = await bcrypt.hash('cashier123', COST);
 
   await prisma.user.upsert({
     where: { username: 'admin' },
-    update: {},
-    create: { username: 'admin', passwordHash: adminHash, fullName: 'Admin User', role: 'admin' },
+    update: { passwordHash: adminHash, isActive: true },
+    create: { username: 'admin', passwordHash: adminHash, fullName: 'Admin User', role: 'admin', isActive: true },
   });
   await prisma.user.upsert({
     where: { username: 'cashier1' },
-    update: {},
-    create: { username: 'cashier1', passwordHash: cashierHash, fullName: 'Cashier One', role: 'cashier' },
+    update: { passwordHash: cashierHash, isActive: true },
+    create: { username: 'cashier1', passwordHash: cashierHash, fullName: 'Cashier One', role: 'cashier', isActive: true },
   });
 
   const types = ['Tablet', 'Capsule', 'Syrup', 'Injection', 'Cream', 'Drops', 'Inhaler', 'Sachet'];
