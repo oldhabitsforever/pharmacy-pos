@@ -29,12 +29,15 @@ jobs:
         run: |
           echo "${{ secrets.DATABASE_URL }}" | npx wrangler@3 pages secret put DATABASE_URL --project-name=pharmacy-pos
           echo "${{ secrets.NEXTAUTH_SECRET }}" | npx wrangler@3 pages secret put NEXTAUTH_SECRET --project-name=pharmacy-pos
+          echo "${{ secrets.NEXTAUTH_SECRET }}" | npx wrangler@3 pages secret put AUTH_SECRET --project-name=pharmacy-pos
       - name: Build with next-on-pages
         run: npx @cloudflare/next-on-pages@1
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          AUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL: https://pharmacy-pos-3xi.pages.dev
+          AUTH_URL: https://pharmacy-pos-3xi.pages.dev
       - name: Deploy to Cloudflare Pages
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
