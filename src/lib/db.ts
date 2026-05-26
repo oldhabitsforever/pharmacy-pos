@@ -1,16 +1,15 @@
-import { PrismaClient } from '@prisma/client/edge';
+import { PrismaClient } from '@prisma/client';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { PrismaNeon } from '@prisma/adapter-neon';
+import ws from 'ws';
+
+neonConfig.webSocketConstructor = ws;
 
 declare global { var prisma: PrismaClient | undefined }
 
 function getPrismaClient(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error('DATABASE_URL environment variable is not set');
-  // Use the runtime native WebSocket (CF Workers + browsers have it globally)
-  if (typeof globalThis.WebSocket !== 'undefined') {
-    neonConfig.webSocketConstructor = globalThis.WebSocket as any;
-  }
   const pool = new Pool({ connectionString: databaseUrl });
   const adapter = new PrismaNeon(pool);
   return new PrismaClient({ adapter } as any);
