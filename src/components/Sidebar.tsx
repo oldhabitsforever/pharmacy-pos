@@ -23,14 +23,14 @@ const cashierNav = [
   { label: 'POS / Sales', href: '/pos', icon: '🛒' },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = (session?.user as any)?.role;
   const nav = role === 'admin' ? adminNav : cashierNav;
 
   return (
-    <aside className="w-56 bg-white border-r border-gray-200 flex flex-col h-screen fixed left-0 top-0 z-20">
+    <aside className={cn("w-56 bg-white border-r border-gray-200 flex flex-col h-screen fixed left-0 top-0 z-20 transition-transform duration-300", isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0")}>
       {/* Logo */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2">
@@ -47,6 +47,7 @@ export default function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
                 active

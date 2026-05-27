@@ -32,6 +32,7 @@ export default function POSPage() {
   const [lastSale, setLastSale] = useState<any>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [adminDiscount, setAdminDiscount] = useState(0);
+  const [activeTab, setActiveTab] = useState<'cart' | 'payment'>('cart');
   const [pharmacyName, setPharmacyName] = useState('Al-Shifa Pharmacy');
 
   const searchRef = useRef<HTMLInputElement>(null);
@@ -188,9 +189,20 @@ export default function POSPage() {
 
   return (
     <AppShell>
-      <div className="h-screen flex overflow-hidden" style={{ height: 'calc(100vh - 0px)' }}>
+      <div className="flex flex-col md:flex-row overflow-hidden h-[calc(100vh-3rem)] md:h-screen">
+        {/* Mobile tab switcher */}
+        <div className="md:hidden flex border-b border-gray-200 bg-white shrink-0">
+          <button onClick={() => setActiveTab('cart')}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${activeTab === 'cart' ? 'text-brand-700 border-b-2 border-brand-600' : 'text-gray-500'}`}>
+            🛒 Cart{cart.length > 0 ? ` (${cart.length})` : ''}
+          </button>
+          <button onClick={() => setActiveTab('payment')}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${activeTab === 'payment' ? 'text-brand-700 border-b-2 border-brand-600' : 'text-gray-500'}`}>
+            💳 Payment{total > 0 ? ` · ${formatCurrency(total)}` : ''}
+          </button>
+        </div>
         {/* Left — Product search + cart */}
-        <div className="flex-1 flex flex-col border-r border-gray-200 overflow-hidden">
+        <div className={`flex-1 flex-col border-r border-gray-200 overflow-hidden ${activeTab === 'cart' ? 'flex' : 'hidden'} md:flex`}>
           {/* Search bar */}
           <div className="p-3 bg-white border-b border-gray-200">
             <div className="relative">
@@ -286,7 +298,7 @@ export default function POSPage() {
         </div>
 
         {/* Right — Customer + Payment */}
-        <div className="w-72 bg-white flex flex-col">
+        <div className={`w-full md:w-72 bg-white flex-col ${activeTab === 'payment' ? 'flex' : 'hidden'} md:flex`}>
           {/* Customer section */}
           <div className="p-4 border-b border-gray-200">
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Customer (F2)</label>
